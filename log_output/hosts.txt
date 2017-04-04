@@ -1,1 +1,10 @@
-Output for Feature 1 would go here
+piweba3y.prodigy.com,20748
+piweba4y.prodigy.com,13888
+piweba1y.prodigy.com,11527
+siltb10.orl.mmc.com,9936
+alyssa.prodigy.com,9484
+edams.ksc.nasa.gov,8653
+piweba2y.prodigy.com,7248
+163.206.89.4,6231
+198.133.29.18,5812
+www-d3.proxy.aol.com,5675
