@@ -62,6 +62,12 @@ def getDateTime(timestamp):
     dateTimeFormat = time.strftime("%d/%b/%Y:%H:%M:%S -0400", local_time)
     return dateTimeFormat
 
+def getIndex(arr,value):
+    i = bisect.bisect_right(arr, value)
+    if i:
+        return i-1
+    raise ValueError
+
 def feature3(graph3, timeList, block):
     time_arr = sorted(timeList)
     start = time_arr[0]
@@ -70,14 +76,9 @@ def feature3(graph3, timeList, block):
         previousKey = start
         key = getDateTime(previousKey)
         graph3[key] = 0
-        j = bisect.bisect_left(timeList,previousKey)
-        while j < len(timeList):
-            nextKey = timeList[j]
-            if nextKey >= previousKey and nextKey - previousKey <= block:
-                graph3[key] += 1
-            elif nextKey - previousKey > block:
-                break
-            j += 1
+        jStart = bisect.bisect_left(timeList,previousKey)
+        jEnd = getIndex(timeList, previousKey+block)
+        graph3[key] = jEnd - jStart + 1
         start += 1
 
 if __name__ == '__main__':
@@ -148,19 +149,20 @@ www-d3.proxy.aol.com,5675
 13/Jul/1995:08:59:40 -0400,34960
 13/Jul/1995:08:59:39 -0400,34960
 13/Jul/1995:08:59:38 -0400,34955
+13/Jul/1995:08:59:32 -0400,34955
 13/Jul/1995:08:59:42 -0400,34952
 13/Jul/1995:08:59:35 -0400,34951
 13/Jul/1995:08:59:34 -0400,34950
 13/Jul/1995:08:59:31 -0400,34949
 13/Jul/1995:08:59:41 -0400,34947
-13/Jul/1995:08:58:54 -0400,34944
 
-Graph contruction: 147.62 seconds
-Feature 1 time: 1.16 seconds
+
+Graph contruction: 153.23 seconds
+Feature 1 time: 1.03 seconds
 Feature 2 time: 0.02 seconds
 4380920 0
-Done sliding window
-Feature 3 time: 10440.36 seconds
-1104525
+Feature 3 time: 10.60 seconds
+2381545
+
 
 '''
