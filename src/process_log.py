@@ -5,6 +5,7 @@ import re
 import operator
 import time
 import datetime
+import bisect
 
 fname = os.path.realpath("/Users/Vaibhav/Documents/insightDataChallenge-fansite-analytics/log_input/log_input.txt")
 feature1_out = os.path.realpath("/Users/Vaibhav/Documents/insightDataChallenge-fansite-analytics/log_output/hosts.txt")
@@ -61,22 +62,23 @@ def getDateTime(timestamp):
     dateTimeFormat = time.strftime("%d/%b/%Y:%H:%M:%S -0400", local_time)
     return dateTimeFormat
 
-def feature3(graph3, time_arr, block):
-    time_arr = sorted(time_arr)
-    i = 0
-    while i < len(time_arr):
-        previousKey = time_arr[i]
+def feature3(graph3, timeList, block):
+    time_arr = sorted(timeList)
+    start = time_arr[0]
+    end = time_arr[-1]
+    while start <= end:
+        previousKey = start
         key = getDateTime(previousKey)
-        graph3[key] = 1
-        j = i + 1
-        while j < len(time_arr):
-            nextKey = time_arr[j]
-            if nextKey - previousKey > block:
-                break
-            else:
+        graph3[key] = 0
+        j = bisect.bisect_left(timeList,previousKey)
+        while j < len(timeList):
+            nextKey = timeList[j]
+            if nextKey >= previousKey and nextKey - previousKey <= block:
                 graph3[key] += 1
+            elif nextKey - previousKey > block:
+                break
             j += 1
-        i += 1
+        start += 1
 
 if __name__ == '__main__':
     graph = {}
