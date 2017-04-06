@@ -55,6 +55,7 @@ def past_graph():
 def feature(graph,filename,value):
     try:
         output = sorted(graph.iteritems(), key=operator.itemgetter(1), reverse=True)[:10]
+        output=sorted(output)
         with open(filename,'w') as f:
             for items in output:
                 if value==2:

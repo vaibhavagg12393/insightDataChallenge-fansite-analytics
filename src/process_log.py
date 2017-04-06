@@ -13,6 +13,7 @@ feature2_out = os.path.realpath("./fansite-analytics-challenge/log_output/resour
 feature3_out = os.path.realpath("./fansite-analytics-challenge/log_output/hours.txt")
 feature4_out = os.path.realpath("./fansite-analytics-challenge/log_output/blocked.txt")
 
+
 def past_graph():
     with open(fname) as fp:
         for line in fp:
@@ -55,6 +56,7 @@ def past_graph():
 def feature(graph,filename,value):
     try:
         output = sorted(graph.iteritems(), key=operator.itemgetter(1), reverse=True)[:10]
+        output=sorted(output)
         with open(filename,'w') as f:
             for items in output:
                 if value==2:
