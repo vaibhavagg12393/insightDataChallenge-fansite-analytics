@@ -7,11 +7,11 @@ import time
 import datetime
 import bisect
 
-fname = os.path.realpath("/Users/Vaibhav/Documents/insightDataChallenge-fansite-analytics/log_input/log_input.txt")
-feature1_out = os.path.realpath("/Users/Vaibhav/Documents/insightDataChallenge-fansite-analytics/log_output/hosts.txt")
-feature2_out = os.path.realpath("/Users/Vaibhav/Documents/insightDataChallenge-fansite-analytics/log_output/resources.txt")
-feature3_out = os.path.realpath("/Users/Vaibhav/Documents/insightDataChallenge-fansite-analytics/log_output/hours.txt")
-feature4_out = os.path.realpath("/Users/Vaibhav/Documents/insightDataChallenge-fansite-analytics/log_output/blocked.txt")
+fname = os.path.realpath("./fansite-analytics-challenge//log_input/log_input.txt")
+feature1_out = os.path.realpath("./fansite-analytics-challenge/log_output/hosts.txt")
+feature2_out = os.path.realpath("./fansite-analytics-challenge/log_output/resources.txt")
+feature3_out = os.path.realpath("./fansite-analytics-challenge/log_output/hours.txt")
+feature4_out = os.path.realpath("./fansite-analytics-challenge/log_output/blocked.txt")
 
 def past_graph():
     with open(fname) as fp:
@@ -24,11 +24,14 @@ def past_graph():
                 dateTimeStamp = re.search(r'\[(.+?)\]', line)
                 http = components[-2].strip()
                 bytes = components[-1].strip()
+
+                # Feature 1 graph
                 if host and http=='200':
                     mHost = str(host.group())
                     graph.setdefault(mHost, 0)
                     graph[mHost] += 1
 
+                # Feature 2 graph2
                 if resource:
                     try:
                         mResource = str(resource.group()).split()[1].strip()
@@ -37,6 +40,8 @@ def past_graph():
                             graph2[mResource] += int(bytes)
                     except:
                         continue
+
+                # Feature 3 timeArray to store timestamp for each event
                 if dateTimeStamp:
                     try:
                         mDateTimeStamp = dateTimeStamp.group()
@@ -48,6 +53,7 @@ def past_graph():
             except ValueError:
                     continue
 
+# Function to find top 10 entries from given dictionary and write to destination file
 def feature(graph,filename):
     try:
         output = sorted(graph.iteritems(), key=operator.itemgetter(1), reverse=True)[:10]
@@ -59,17 +65,20 @@ def feature(graph,filename):
     except:
         return 0
 
+# Function to convert timestamp to Date-Time-TimeZone Format
 def getDateTime(timestamp):
     local_time = time.localtime(timestamp)
     dateTimeFormat = time.strftime("%d/%b/%Y:%H:%M:%S -0400", local_time)
     return dateTimeFormat
 
+# Function to return index of right most occurrence of timestamp in timeArray
 def getIndex(arr,value):
     i = bisect.bisect_right(arr, value)
     if i:
         return i-1
     raise ValueError
 
+# Function for Feature 3
 def feature3(graph3, timeList, block):
     sortItems = sorted(timeList)
     start = sortItems[0]
@@ -83,10 +92,11 @@ def feature3(graph3, timeList, block):
         graph3[key] = jEnd - jStart + 1
         start += 1
 
-def feature4(blockedHosts,timeHostArray,bigArray,smallWindow, bigWindow):
+# Function for Feature 4
+def feature4(blockedHosts,timeArray,bigArray,smallWindow, bigWindow):
     blocks_file = open(feature4_out,'w')
     i = 0
-    while i < len(timeHostArray):
+    while i < len(timeArray):
         httpCode = bigArray[i][-2]
         hostAddress = bigArray[i][0]
 
@@ -94,36 +104,36 @@ def feature4(blockedHosts,timeHostArray,bigArray,smallWindow, bigWindow):
             i += 1
             continue
 
-        elif httpCode == '200' and hostAddress in blockedHosts and (timeHostArray[i] - blockedHosts[hostAddress][0]) <= bigWindow:
-            if (timeHostArray[i] - blockedHosts[hostAddress][0]) <= smallWindow and blockedHosts[hostAddress][1] < 3:
+        elif httpCode == '200' and hostAddress in blockedHosts and (timeArray[i] - blockedHosts[hostAddress][0]) <= bigWindow:
+            if (timeArray[i] - blockedHosts[hostAddress][0]) <= smallWindow and blockedHosts[hostAddress][1] < 3:
                 del blockedHosts[hostAddress]
             elif blockedHosts[hostAddress][1] == 3:
                 blocks_file.write(' '.join(bigArray[i]) + '\n')
             i += 1
             continue
 
-        elif hostAddress in blockedHosts and (timeHostArray[i] - blockedHosts[hostAddress][0]) <= bigWindow and blockedHosts[hostAddress][1] == 3:
+        elif hostAddress in blockedHosts and (timeArray[i] - blockedHosts[hostAddress][0]) <= bigWindow and blockedHosts[hostAddress][1] == 3:
             blocks_file.write(' '.join(bigArray[i]) + '\n')
             i += 1
             continue
 
-        elif httpCode == '200' and hostAddress in blockedHosts and (timeHostArray[i]-blockedHosts[hostAddress][0]) > smallWindow:
+        elif httpCode == '200' and hostAddress in blockedHosts and (timeArray[i]-blockedHosts[hostAddress][0]) > smallWindow:
             del blockedHosts[hostAddress]
             i += 1
             continue
 
-        elif httpCode != '200' and hostAddress in blockedHosts and (timeHostArray[i]-blockedHosts[hostAddress][0]) > smallWindow:
+        elif httpCode != '200' and hostAddress in blockedHosts and (timeArray[i]-blockedHosts[hostAddress][0]) > smallWindow:
             del blockedHosts[hostAddress]
-            blockedHosts[hostAddress] = [timeHostArray[i], 1]
+            blockedHosts[hostAddress] = [timeArray[i], 1]
             i += 1
             continue
 
         elif httpCode != '200' and hostAddress not in blockedHosts:
-            blockedHosts[hostAddress] = [timeHostArray[i], 1]
+            blockedHosts[hostAddress] = [timeArray[i], 1]
             i += 1
             continue
 
-        elif httpCode != '200' and hostAddress in blockedHosts and (timeHostArray[i]-blockedHosts[hostAddress][0]) <= smallWindow:
+        elif httpCode != '200' and hostAddress in blockedHosts and (timeArray[i]-blockedHosts[hostAddress][0]) <= smallWindow:
             blockCount = blockedHosts[hostAddress][1] + 1
             blockedHosts[hostAddress][1] = blockCount
             i += 1
@@ -131,97 +141,51 @@ def feature4(blockedHosts,timeHostArray,bigArray,smallWindow, bigWindow):
         i += 1
 
 if __name__ == '__main__':
-    graph = {}
-    graph2={}
-    graph3 = {}
-    timeArray = []
-    bigArray = []
-    timeHostArray=[]
-    blockedHosts = {}
-    smallBlock = 20
-    bigBlock = 300
-    superBlock = 3600
+    graph = {}                          # Dictionary for feature 1
+    graph2={}                           # Dictionary for feature 2
+    graph3 = {}                         # Dictionary for feature 3
+    blockedHosts = {}                   # Dictionary for feature 4
+    timeArray = []                      # Array to store timestamp of each event
+    bigArray = []                       # Array to store all components of line
+    smallBlock = 20                     # 20 seconds window
+    bigBlock = 300                      # 5 minutes window
+    superBlock = 3600                   # 60 minutes window
+
+    # Read data from file and construct dictionary
     start = time.time()
     past_graph()
     end = time.time()
     print "Graph contruction: %.2f seconds"%(end-start)
+
+    # Feature 1
     start = time.time()
     feature(graph,feature1_out)
     end = time.time()
     print "Feature 1 time: %.2f seconds"%(end-start)
+
+    # Feature 2
     start = time.time()
     feature(graph2,feature2_out)
     end = time.time()
     print "Feature 2 time: %.2f seconds" % (end - start)
+
+    # Feature 3
     start = time.time()
-    print len(timeArray),len(graph3)
     feature3(graph3, timeArray, superBlock)
     end = time.time()
     print "Feature 3 time: %.2f seconds" % (end - start)
-    print len(graph3)
     feature(graph3,feature3_out)
+
+    # Feature 4
     start = time.time()
     feature4(blockedHosts,timeArray,bigArray,smallBlock, bigBlock)
     end = time.time()
     print "Feature 4 time: %.2f seconds" % (end - start)
 
 '''
-Feature 1 without http 200
-
-piweba3y.prodigy.com,22309
-piweba4y.prodigy.com,14903
-piweba1y.prodigy.com,12876
-siltb10.orl.mmc.com,10578
-alyssa.prodigy.com,10184
-edams.ksc.nasa.gov,9095
-piweba2y.prodigy.com,7961
-163.206.89.4,6520
-www-d3.proxy.aol.com,6299
-vagrant.vf.mmc.com,6096
-
-
-Feature 1 with http 200
-
-piweba3y.prodigy.com,20748
-piweba4y.prodigy.com,13888
-piweba1y.prodigy.com,11527
-siltb10.orl.mmc.com,9936
-alyssa.prodigy.com,9484
-edams.ksc.nasa.gov,8653
-piweba2y.prodigy.com,7248
-163.206.89.4,6231
-198.133.29.18,5812
-www-d3.proxy.aol.com,5675
-
-/shuttle/missions/sts-71/movies/sts-71-launch.mpg,4830851820
-/shuttle/missions/sts-71/movies/sts-71-tcdt-crew-walkout.mpg,4505833864
-/shuttle/missions/sts-53/movies/sts-53-launch.mpg,3160325280
-/shuttle/countdown/count70.gif,1959049585
-/shuttle/technology/sts-newsref/stsref-toc.html,1256215694
-/shuttle/countdown/video/livevideo2.gif,1169155568
-/shuttle/countdown/count.gif,1154002480
-/shuttle/missions/sts-71/movies/sts-71-hatch-hand-group.mpg",1135756810
-/shuttle/countdown/video/livevideo.gif,1128333928
-/shuttle/missions/sts-71/movies/sts-71-mir-dock.mpg,1095681435
-
-13/Jul/1995:08:59:33 -0400,34968
-13/Jul/1995:08:59:40 -0400,34960
-13/Jul/1995:08:59:39 -0400,34960
-13/Jul/1995:08:59:38 -0400,34955
-13/Jul/1995:08:59:32 -0400,34955
-13/Jul/1995:08:59:42 -0400,34952
-13/Jul/1995:08:59:35 -0400,34951
-13/Jul/1995:08:59:34 -0400,34950
-13/Jul/1995:08:59:31 -0400,34949
-13/Jul/1995:08:59:41 -0400,34947
-
-
-Graph contruction: 153.23 seconds
-Feature 1 time: 1.03 seconds
-Feature 2 time: 0.02 seconds
-4380920 0
-Feature 3 time: 10.60 seconds
-2381545
-
-95710
+Graph contruction: 159.37 seconds
+Feature 1 time: 1.55 seconds
+Feature 2 time: 0.05 seconds
+Feature 3 time: 11.59 seconds
+Feature 4 time: 5.42 seconds
 '''
