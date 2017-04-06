@@ -18,6 +18,7 @@ def past_graph():
         for line in fp:
             try:
                 components = line.strip().split(" ")
+                bigArray.append(components)
                 host = re.search(r'([\w.-]+[.]*[\w.-])', line)
                 resource = re.search(r'\"(.+?)\"', line)
                 dateTimeStamp = re.search(r'\[(.+?)\]', line)
@@ -27,6 +28,7 @@ def past_graph():
                     mHost = str(host.group())
                     graph.setdefault(mHost, 0)
                     graph[mHost] += 1
+
                 if resource:
                     try:
                         mResource = str(resource.group()).split()[1].strip()
@@ -69,23 +71,76 @@ def getIndex(arr,value):
     raise ValueError
 
 def feature3(graph3, timeList, block):
-    time_arr = sorted(timeList)
-    start = time_arr[0]
-    end = time_arr[-1]
+    sortItems = sorted(timeList)
+    start = sortItems[0]
+    end = sortItems[-1]
     while start <= end:
         previousKey = start
         key = getDateTime(previousKey)
         graph3[key] = 0
-        jStart = bisect.bisect_left(timeList,previousKey)
-        jEnd = getIndex(timeList, previousKey+block)
+        jStart = bisect.bisect_left(sortItems,previousKey)
+        jEnd = getIndex(sortItems, previousKey+block)
         graph3[key] = jEnd - jStart + 1
         start += 1
+
+def feature4(blockedHosts,timeHostArray,bigArray,smallWindow, bigWindow):
+    blocks_file = open(feature4_out,'w')
+    i = 0
+    while i < len(timeHostArray):
+        httpCode = bigArray[i][-2]
+        hostAddress = bigArray[i][0]
+
+        if httpCode == '200' and hostAddress not in blockedHosts:
+            i += 1
+            continue
+
+        elif httpCode == '200' and hostAddress in blockedHosts and (timeHostArray[i] - blockedHosts[hostAddress][0]) <= bigWindow:
+            if (timeHostArray[i] - blockedHosts[hostAddress][0]) <= smallWindow and blockedHosts[hostAddress][1] < 3:
+                del blockedHosts[hostAddress]
+            elif blockedHosts[hostAddress][1] == 3:
+                blocks_file.write(' '.join(bigArray[i]) + '\n')
+            i += 1
+            continue
+
+        elif hostAddress in blockedHosts and (timeHostArray[i] - blockedHosts[hostAddress][0]) <= bigWindow and blockedHosts[hostAddress][1] == 3:
+            blocks_file.write(' '.join(bigArray[i]) + '\n')
+            i += 1
+            continue
+
+        elif httpCode == '200' and hostAddress in blockedHosts and (timeHostArray[i]-blockedHosts[hostAddress][0]) > smallWindow:
+            del blockedHosts[hostAddress]
+            i += 1
+            continue
+
+        elif httpCode != '200' and hostAddress in blockedHosts and (timeHostArray[i]-blockedHosts[hostAddress][0]) > smallWindow:
+            del blockedHosts[hostAddress]
+            blockedHosts[hostAddress] = [timeHostArray[i], 1]
+            i += 1
+            continue
+
+        elif httpCode != '200' and hostAddress not in blockedHosts:
+            blockedHosts[hostAddress] = [timeHostArray[i], 1]
+            i += 1
+            continue
+
+        elif httpCode != '200' and hostAddress in blockedHosts and (timeHostArray[i]-blockedHosts[hostAddress][0]) <= smallWindow:
+            blockCount = blockedHosts[hostAddress][1] + 1
+            blockedHosts[hostAddress][1] = blockCount
+            i += 1
+            continue
+        i += 1
 
 if __name__ == '__main__':
     graph = {}
     graph2={}
     graph3 = {}
     timeArray = []
+    bigArray = []
+    timeHostArray=[]
+    blockedHosts = {}
+    smallBlock = 20
+    bigBlock = 300
+    superBlock = 3600
     start = time.time()
     past_graph()
     end = time.time()
@@ -100,11 +155,15 @@ if __name__ == '__main__':
     print "Feature 2 time: %.2f seconds" % (end - start)
     start = time.time()
     print len(timeArray),len(graph3)
-    feature3(graph3, timeArray, 3600)
+    feature3(graph3, timeArray, superBlock)
     end = time.time()
     print "Feature 3 time: %.2f seconds" % (end - start)
     print len(graph3)
     feature(graph3,feature3_out)
+    start = time.time()
+    feature4(blockedHosts,timeArray,bigArray,smallBlock, bigBlock)
+    end = time.time()
+    print "Feature 4 time: %.2f seconds" % (end - start)
 
 '''
 Feature 1 without http 200
@@ -164,5 +223,5 @@ Feature 2 time: 0.02 seconds
 Feature 3 time: 10.60 seconds
 2381545
 
-
+95710
 '''
