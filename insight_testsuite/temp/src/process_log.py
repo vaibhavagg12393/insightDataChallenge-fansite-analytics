@@ -6,12 +6,12 @@ import operator
 import time
 import datetime
 import bisect
-
-fname = os.path.realpath("./fansite-analytics-challenge/log_input/log_input.txt")
-feature1_out = os.path.realpath("./fansite-analytics-challenge/log_output/hosts.txt")
-feature2_out = os.path.realpath("./fansite-analytics-challenge/log_output/resources.txt")
-feature3_out = os.path.realpath("./fansite-analytics-challenge/log_output/hours.txt")
-feature4_out = os.path.realpath("./fansite-analytics-challenge/log_output/blocked.txt")
+#fansite-analytics-challenge
+fname = os.path.realpath("./log_input/log.txt")
+feature1_out = os.path.realpath("./log_output/hosts.txt")
+feature2_out = os.path.realpath("./log_output/resources.txt")
+feature3_out = os.path.realpath("./log_output/hours.txt")
+feature4_out = os.path.realpath("./log_output/blocked.txt")
 
 def past_graph():
     with open(fname) as fp:
